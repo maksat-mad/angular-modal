@@ -1,10 +1,10 @@
 import { DOCUMENT } from '@angular/common';
 import {
-  ComponentFactoryResolver,
+  EnvironmentInjector,
   Inject,
   Injectable,
-  Injector,
   TemplateRef,
+  createComponent,
 } from '@angular/core';
 import { Subject } from 'rxjs';
 import { ModalComponent } from '../components/modal/modal.component';
@@ -13,19 +13,17 @@ import { ModalComponent } from '../components/modal/modal.component';
 export class ModalService {
   private modalNotifier?: Subject<string>;
   constructor(
-    private resolver: ComponentFactoryResolver,
-    private injector: Injector,
-    @Inject(DOCUMENT) private document: Document
+    @Inject(DOCUMENT) private document: Document,
+    private environmentInjector: EnvironmentInjector
   ) {}
 
   open(content: TemplateRef<any>, options?: { size?: string; title?: string }) {
-    const modalComponentFactory = this.resolver.resolveComponentFactory(
-      ModalComponent
-    );
     const contentViewRef = content.createEmbeddedView(null);
-    const modalComponent = modalComponentFactory.create(this.injector, [
-      contentViewRef.rootNodes,
-    ]);
+
+    const modalComponent = createComponent(ModalComponent, {
+      environmentInjector: this.environmentInjector,
+      projectableNodes: [contentViewRef.rootNodes]
+    });
 
     modalComponent.instance.size = options?.size;
     modalComponent.instance.title = options?.title;
@@ -35,6 +33,7 @@ export class ModalService {
     modalComponent.hostView.detectChanges();
 
     this.document.body.appendChild(modalComponent.location.nativeElement);
+
     this.modalNotifier = new Subject();
     return this.modalNotifier?.asObservable();
   }
