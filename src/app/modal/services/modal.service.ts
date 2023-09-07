@@ -46,4 +46,35 @@ export class ModalService {
     this.modalNotifier?.next('confirm');
     this.closeModal();
   }
+
+  open({ component, template, options }: ModalParams) {
+    let modalComponent = null;
+
+    if (component) {
+      const componentRef = createComponent(component, {
+        environmentInjector: this.environmentInjector,
+      });
+      // componentRef.instance.label = 'Maksat';
+      componentRef.hostView.detectChanges();
+      modalComponent = createComponent<B2bModalComponent>(B2bModalComponent, {
+        environmentInjector: this.environmentInjector,
+        projectableNodes: [[componentRef.location.nativeElement]],
+      });
+    } else if (template) {
+      const contentViewRef = template.createEmbeddedView(null);
+      modalComponent = createComponent<B2bModalComponent>(B2bModalComponent, {
+        environmentInjector: this.environmentInjector,
+        projectableNodes: [contentViewRef.rootNodes],
+      });
+    } else {
+      return;
+    }
+
+    // set closable to true if it is undefined
+    modalComponent.instance.closable = options?.closable == null ? true : options?.closable;
+
+    modalComponent.hostView.detectChanges();
+    console.log(modalComponent.location.nativeElement);
+    this.document.body.appendChild(modalComponent.location.nativeElement);
+  }
 }
